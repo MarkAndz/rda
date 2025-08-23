@@ -11,7 +11,10 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prisma:generate": "prisma generate",
-  "prisma:migrate": "prisma migrate dev --name init"
+  "prisma:migrate": "prisma migrate dev --name init",
+    "test": "vitest",
+    "test:cov": "vitest --coverage",
+    "test:ci": "vitest --coverage --run"
   },
   "dependencies": {
     "@prisma/client": "^6.14.0",
