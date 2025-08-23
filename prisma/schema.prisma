@@ -71,6 +71,7 @@ model Restaurant {
   updatedAt   DateTime @updatedAt
   items       Item[]
   members     RestaurantMember[]
+  orders      Order[]
 
   @@index([isActive])
   @@index([city])
@@ -115,11 +116,14 @@ model Order {
   user       User?        @relation(fields: [customerId], references: [id])
   checkoutId String
   checkout   Checkout     @relation(fields: [checkoutId], references: [id])
+  restaurantId String
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
   totalCents Int
   items      OrderItem[]
 
   @@index([customerId])
   @@index([checkoutId])
+  @@index([restaurantId])
 }
 
 model OrderItem {
