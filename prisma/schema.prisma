@@ -16,6 +16,23 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum RestaurantRole {
+  OWNER
+  ADMIN
+  STAFF
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  memberships RestaurantMember[]
+  orders     Order[]
+  createdItems Item[]
+}
+
 model Restaurant {
   id          String   @id @default(cuid())
   name        String
@@ -35,6 +52,7 @@ model Restaurant {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   items       Item[]
+  members     RestaurantMember[]
 
   @@index([isActive])
   @@index([city])
@@ -51,6 +69,8 @@ model Item {
   quantityAvailable     Int         @default(0)
   expiresAt             DateTime
   imageUrl              String?
+  createdById           String?
+  createdBy             User?       @relation(fields: [createdById], references: [id])
   createdAt             DateTime    @default(now())
   updatedAt             DateTime    @updatedAt
   orderItems            OrderItem[]
@@ -58,6 +78,7 @@ model Item {
 
   @@index([restaurantId])
   @@index([expiresAt])
+  @@index([createdById])
   @@unique([restaurantId, name])
 }
 
@@ -72,8 +93,12 @@ model Order {
   createdAt  DateTime     @default(now())
   status     OrderStatus  @default(PENDING)
   customer   String?
+  customerId String?
+  user       User?        @relation(fields: [customerId], references: [id])
   totalCents Int
   items      OrderItem[]
+
+  @@index([customerId])
 }
 
 model OrderItem {
@@ -86,4 +111,18 @@ model OrderItem {
   item                  Item   @relation(fields: [itemId], references: [id], onDelete: Restrict)
 
   @@unique([orderId, itemId])
+}
+
+model RestaurantMember {
+  id            String         @id @default(cuid())
+  userId        String
+  restaurantId  String
+  role          RestaurantRole @default(STAFF)
+  createdAt     DateTime       @default(now())
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant    Restaurant     @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, restaurantId])
+  @@index([restaurantId, role])
 }
