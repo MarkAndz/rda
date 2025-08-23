@@ -30,6 +30,7 @@ model User {
   updatedAt DateTime @updatedAt
   memberships RestaurantMember[]
   orders     Order[]
+  createdItems Item[]
 }
 
 model Restaurant {
@@ -68,6 +69,8 @@ model Item {
   quantityAvailable     Int         @default(0)
   expiresAt             DateTime
   imageUrl              String?
+  createdById           String?
+  createdBy             User?       @relation(fields: [createdById], references: [id])
   createdAt             DateTime    @default(now())
   updatedAt             DateTime    @updatedAt
   orderItems            OrderItem[]
@@ -75,6 +78,7 @@ model Item {
 
   @@index([restaurantId])
   @@index([expiresAt])
+  @@index([createdById])
   @@unique([restaurantId, name])
 }
 
