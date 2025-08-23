@@ -1,0 +1,89 @@
+// Prisma schema for RDA (Restaurant Discount App)
+// SQLite for local development
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+model Restaurant {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  address     String
+  city        String?
+  country     String?
+  postcode    String?
+  latitude    Float?
+  longitude   Float?
+  timezone    String? // e.g., "Europe/Riga"
+  phone       String?
+  email       String?  // validate in app
+  description String?
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  items       Item[]
+
+  @@index([isActive])
+  @@index([city])
+}
+
+model Item {
+  id                    String      @id @default(cuid())
+  restaurantId          String
+  restaurant            Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  name                  String
+  description           String?
+  originalPriceCents    Int
+  discountedPriceCents  Int
+  quantityAvailable     Int         @default(0)
+  expiresAt             DateTime
+  imageUrl              String?
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  orderItems            OrderItem[]
+  allergens             Allergen[]
+
+  @@index([restaurantId])
+  @@index([expiresAt])
+  @@unique([restaurantId, name])
+}
+
+model Allergen {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  items Item[]
+}
+
+model Order {
+  id         String       @id @default(cuid())
+  createdAt  DateTime     @default(now())
+  status     OrderStatus  @default(PENDING)
+  customer   String?
+  totalCents Int
+  items      OrderItem[]
+}
+
+model OrderItem {
+  id                    String @id @default(cuid())
+  orderId               String
+  itemId                String
+  quantity              Int    @default(1)
+  priceCentsAtPurchase  Int
+  order                 Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  item                  Item   @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@unique([orderId, itemId])
+}
