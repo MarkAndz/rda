@@ -22,6 +22,22 @@ enum RestaurantRole {
   STAFF
 }
 
+// Parent payment session that groups one or more per-restaurant Orders
+model Checkout {
+  id           String      @id @default(cuid())
+  customerId   String?
+  customer     User?       @relation(fields: [customerId], references: [id])
+  status       OrderStatus @default(PENDING)
+  subtotalCents Int        @default(0)
+  taxCents      Int        @default(0)
+  feeCents      Int        @default(0)
+  totalCents    Int        @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([customerId])
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -31,6 +47,7 @@ model User {
   memberships RestaurantMember[]
   orders     Order[]
   createdItems Item[]
+  checkouts  Checkout[]
 }
 
 model Restaurant {
