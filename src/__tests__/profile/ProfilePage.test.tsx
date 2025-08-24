@@ -71,13 +71,15 @@ describe('ProfilePage order history', () => {
     ]);
 
     const { default: ProfilePage } = await import('@/app/profile/page');
-    const el = await ProfilePage({ searchParams: {} });
+    const el = await ProfilePage({ searchParams: Promise.resolve({}) as any });
     const html = renderToStaticMarkup(el as unknown as React.ReactElement);
 
     expect(html).toContain('Order History');
     expect(html).toContain('Test Resto');
     expect(html).toContain('#aaaaaaaa');
     expect(html).toContain('€25.99');
+    // has a View link to details page
+    expect(html).toContain('/profile/orders/aaaaaaaa-1111-2222-3333');
   });
 
   it('shows empty state when user has no orders', async () => {
@@ -88,7 +90,7 @@ describe('ProfilePage order history', () => {
     prisma.account.findMany.mockResolvedValue([]);
 
     const { default: ProfilePage } = await import('@/app/profile/page');
-    const el = await ProfilePage({ searchParams: {} });
+    const el = await ProfilePage({ searchParams: Promise.resolve({}) as any });
     const html = renderToStaticMarkup(el as unknown as React.ReactElement);
 
     expect(html).toContain('No orders yet');
@@ -104,7 +106,7 @@ describe('ProfilePage order history', () => {
     prisma.account.findMany.mockResolvedValue([]);
 
     const { default: ProfilePage } = await import('@/app/profile/page');
-    const el = await ProfilePage({ searchParams: {} });
+    const el = await ProfilePage({ searchParams: Promise.resolve({}) as any });
     const html = renderToStaticMarkup(el as unknown as React.ReactElement);
 
     expect(html).toContain('Next');
