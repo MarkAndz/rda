@@ -14,6 +14,7 @@ export async function middleware(request: NextRequest) {
   const isProtectedRoute =
     request.nextUrl.pathname.startsWith('/dashboard') ||
     request.nextUrl.pathname.startsWith('/profile') ||
+    request.nextUrl.pathname.startsWith('/checkout') ||
     request.nextUrl.pathname.includes('/edit') ||
     request.nextUrl.pathname.includes('/create');
 
@@ -33,6 +34,7 @@ export const config = {
   matcher: [
     '/dashboard/:path*',
     '/profile/:path*',
+    '/checkout',
     '/restaurant/create',
     '/restaurant/:path*/edit',
     '/item/create',
