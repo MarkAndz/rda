@@ -112,4 +112,44 @@ describe('ProfilePage order history', () => {
     expect(html).toContain('Next');
     expect(html).toContain('/profile?page=2');
   });
+
+  it('applies status filter and preserves in pagination links', async () => {
+    const { auth, prisma } = await getMocks();
+    auth.mockResolvedValue({ user: { id: 'user-1' } });
+    prisma.order.findMany.mockResolvedValue([makeOrder({ status: 'COMPLETED' })]);
+    prisma.order.count.mockResolvedValue(25);
+    prisma.account.findMany.mockResolvedValue([]);
+
+    const { default: ProfilePage } = await import('@/app/profile/page');
+    const el = await ProfilePage({ searchParams: Promise.resolve({ status: 'COMPLETED' }) as any });
+    const html = renderToStaticMarkup(el as unknown as React.ReactElement);
+
+    expect(prisma.order.findMany).toHaveBeenCalled();
+    const args = prisma.order.findMany.mock.calls[0][0];
+    expect(args.where.status).toBe('COMPLETED');
+    expect(html).toContain('/profile?page=2&amp;status=COMPLETED');
+  });
+
+  it('applies date range and sort oldest', async () => {
+    const { auth, prisma } = await getMocks();
+    auth.mockResolvedValue({ user: { id: 'user-1' } });
+    prisma.order.findMany.mockResolvedValue([makeOrder()]);
+    prisma.order.count.mockResolvedValue(1);
+    prisma.account.findMany.mockResolvedValue([]);
+
+    const { default: ProfilePage } = await import('@/app/profile/page');
+    const el = await ProfilePage({
+      searchParams: Promise.resolve({
+        from: '2024-01-01',
+        to: '2024-02-01',
+        sort: 'oldest',
+      }) as any,
+    });
+    renderToStaticMarkup(el as unknown as React.ReactElement);
+
+    const args = prisma.order.findMany.mock.calls[0][0];
+    expect(args.orderBy.createdAt).toBe('asc');
+    expect(args.where.createdAt.gte).toBeInstanceOf(Date);
+    expect(args.where.createdAt.lte).toBeInstanceOf(Date);
+  });
 });
