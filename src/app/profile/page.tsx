@@ -19,7 +19,13 @@ type OrderRow = {
 export default async function ProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{
+    page?: string;
+    status?: string;
+    from?: string;
+    to?: string;
+    sort?: string;
+  }>;
 }) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -35,12 +41,53 @@ export default async function ProfilePage({
   const pageSize = 20;
   const params = await searchParams;
   const page = Math.max(1, Number(params?.page) || 1);
+
+  // Parse filters and sorting
+  const statusRaw = (params?.status || '').toUpperCase();
+  const validStatuses = new Set(['PENDING', 'COMPLETED', 'CANCELLED']);
+  const statusFilter = validStatuses.has(statusRaw)
+    ? (statusRaw as 'PENDING' | 'COMPLETED' | 'CANCELLED')
+    : undefined;
+
+  const fromStr = params?.from;
+  const toStr = params?.to;
+  const fromDate = fromStr ? new Date(fromStr) : undefined;
+  const toDate = toStr ? new Date(toStr) : undefined;
+  if (toDate) {
+    // Set to end of day for inclusive range
+    toDate.setHours(23, 59, 59, 999);
+  }
+
+  const sort = params?.sort === 'oldest' ? 'oldest' : 'newest';
+
+  const where = {
+    customerId: session.user.id as string,
+    ...(statusFilter ? { status: statusFilter } : {}),
+    ...(fromDate || toDate
+      ? {
+          createdAt: { ...(fromDate ? { gte: fromDate } : {}), ...(toDate ? { lte: toDate } : {}) },
+        }
+      : {}),
+  } as const;
+
+  const orderBy = { createdAt: sort === 'oldest' ? 'asc' : 'desc' } as const;
+
+  const buildHref = (targetPage: number) => {
+    const qp = new URLSearchParams();
+    qp.set('page', String(targetPage));
+    if (statusFilter) qp.set('status', statusFilter);
+    if (fromStr) qp.set('from', fromStr);
+    if (toStr) qp.set('to', toStr);
+    if (sort === 'oldest') qp.set('sort', 'oldest');
+    const query = qp.toString();
+    return `/profile${query ? `?${query}` : ''}`;
+  };
   const skip = (page - 1) * pageSize;
 
   const [orders, totalCount, accounts] = await Promise.all([
     prisma.order.findMany({
-      where: { customerId: session.user.id },
-      orderBy: { createdAt: 'desc' },
+      where,
+      orderBy,
       skip,
       take: pageSize,
       select: {
@@ -58,7 +105,7 @@ export default async function ProfilePage({
         },
       },
     }) as Promise<OrderRow[]>,
-    prisma.order.count({ where: { customerId: session.user.id } }),
+    prisma.order.count({ where }),
     prisma.account.findMany({
       where: { userId: session.user.id },
       select: { provider: true, providerAccountId: true },
@@ -118,6 +165,59 @@ export default async function ProfilePage({
           </span>
         </div>
 
+        {/* Filters */}
+        <form className="mb-4 grid grid-cols-12 items-end gap-3" action="/profile" method="get">
+          <div className="col-span-3">
+            <label className="mb-1 block text-xs font-medium text-gray-700">Status</label>
+            <select
+              name="status"
+              defaultValue={statusFilter || ''}
+              className="w-full rounded border px-2 py-1 text-sm"
+            >
+              <option value="">All</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="PENDING">Pending</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+          </div>
+          <div className="col-span-3">
+            <label className="mb-1 block text-xs font-medium text-gray-700">From</label>
+            <input
+              type="date"
+              name="from"
+              defaultValue={params?.from || ''}
+              className="w-full rounded border px-2 py-1 text-sm"
+            />
+          </div>
+          <div className="col-span-3">
+            <label className="mb-1 block text-xs font-medium text-gray-700">To</label>
+            <input
+              type="date"
+              name="to"
+              defaultValue={params?.to || ''}
+              className="w-full rounded border px-2 py-1 text-sm"
+            />
+          </div>
+          <div className="col-span-2">
+            <label className="mb-1 block text-xs font-medium text-gray-700">Sort</label>
+            <select
+              name="sort"
+              defaultValue={sort}
+              className="w-full rounded border px-2 py-1 text-sm"
+            >
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+            </select>
+          </div>
+          <div className="col-span-1 flex justify-end">
+            <button type="submit" className="h-8 rounded border px-3 text-sm hover:bg-gray-50">
+              Apply
+            </button>
+          </div>
+          {/* Keep page param when applying filters */}
+          {page > 1 ? <input type="hidden" name="page" value="1" /> : null}
+        </form>
+
         <OrderTable orders={orders} />
 
         {totalPages > 1 && (
@@ -126,7 +226,7 @@ export default async function ProfilePage({
               className={`rounded border px-3 py-1 text-sm ${
                 page <= 1 ? 'pointer-events-none opacity-50' : 'hover:bg-gray-50'
               }`}
-              href={`/profile?page=${page - 1}`}
+              href={buildHref(page - 1)}
               aria-disabled={page <= 1}
             >
               Previous
@@ -138,7 +238,7 @@ export default async function ProfilePage({
               className={`rounded border px-3 py-1 text-sm ${
                 page >= totalPages ? 'pointer-events-none opacity-50' : 'hover:bg-gray-50'
               }`}
-              href={`/profile?page=${page + 1}`}
+              href={buildHref(page + 1)}
               aria-disabled={page >= totalPages}
             >
               Next
