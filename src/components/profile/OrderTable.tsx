@@ -30,11 +30,12 @@ export function OrderTable({ orders }: { orders: OrderRow[] }) {
     <table className="w-full table-fixed border-collapse text-left text-sm">
       <colgroup>
         <col className="w-[16%]" />
-        <col className="w-[20%]" />
+        <col className="w-[16%]" />
         <col className="w-[22%]" />
         <col className="w-[10%]" />
         <col className="w-[12%]" />
-        <col className="w-[20%]" />
+        <col className="w-[14%]" />
+        <col className="w-[16%]" />
       </colgroup>
       <thead>
         <tr className="border-b text-gray-600">
@@ -44,6 +45,7 @@ export function OrderTable({ orders }: { orders: OrderRow[] }) {
           <th className="py-2">Items</th>
           <th className="py-2">Status</th>
           <th className="py-2">Total</th>
+          <th className="py-2"></th>
         </tr>
       </thead>
       <tbody>
@@ -87,10 +89,18 @@ export function OrderTable({ orders }: { orders: OrderRow[] }) {
                   </span>
                 </td>
                 <td className="py-3 font-medium text-gray-900">{formatCents(o.totalCents)}</td>
+                <td className="py-3 text-right">
+                  <a
+                    href={`/profile/orders/${o.id}`}
+                    className="inline-flex items-center rounded border px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
+                  >
+                    View
+                  </a>
+                </td>
               </tr>
               {isOpen && (
                 <tr className="border-b bg-gray-50/50" aria-live="polite">
-                  <td id={detailsId} colSpan={6} className="py-3">
+                  <td id={detailsId} colSpan={7} className="py-3">
                     <div className="px-2">
                       <div className="mb-2 text-xs font-semibold text-gray-600 uppercase">
                         Items
