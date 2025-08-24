@@ -1,6 +1,16 @@
 import { defineConfig } from 'vitest/config';
+import path from 'node:path';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
+    },
+  },
+  esbuild: {
+    jsx: 'automatic',
+    jsxImportSource: 'react',
+  },
   test: {
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
@@ -10,7 +20,7 @@ export default defineConfig({
       reporter: ['text', 'lcov', 'html'],
       reportsDirectory: './coverage',
       all: true,
-  include: ['src/{lib,utils,server,services,hooks}/**/*.{ts,tsx}'],
+      include: ['src/lib/**/*.{ts,tsx}', 'src/app/auth/**/*.{ts,tsx}', 'src/middleware.ts'],
       exclude: [
         '**/*.d.ts',
         '**/node_modules/**',
@@ -23,7 +33,9 @@ export default defineConfig({
         'vitest.config.*',
         'vitest.setup.*',
         'src/lib/db.ts',
-        'src/app/**',
+        // exclude currently untested UI
+        'src/components/**',
+        'src/app/auth/error/**',
         'src/**/*.test.*',
         'src/**/*.spec.*',
         'src/**/__tests__/**',
