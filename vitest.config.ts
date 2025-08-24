@@ -20,7 +20,19 @@ export default defineConfig({
       reporter: ['text', 'lcov', 'html'],
       reportsDirectory: './coverage',
       all: true,
-      include: ['src/lib/**/*.{ts,tsx}', 'src/app/auth/**/*.{ts,tsx}', 'src/middleware.ts'],
+      include: [
+        // libraries and utils
+        'src/lib/**/*.{ts,tsx}',
+        // middleware
+        'src/middleware.ts',
+        // app routes we actively test
+        'src/app/auth/**/*.{ts,tsx}',
+        'src/app/profile/**/*.{ts,tsx}',
+        'src/app/restaurants/**/*.{ts,tsx}',
+        'src/app/api/**/*.{ts,tsx}',
+        // components used by those pages
+        'src/components/restaurants/**/*.{ts,tsx}',
+      ],
       exclude: [
         '**/*.d.ts',
         '**/node_modules/**',
@@ -33,8 +45,7 @@ export default defineConfig({
         'vitest.config.*',
         'vitest.setup.*',
         'src/lib/db.ts',
-        // exclude currently untested UI
-        'src/components/**',
+        // test files and fixtures
         'src/app/auth/error/**',
         'src/**/*.test.*',
         'src/**/*.spec.*',
