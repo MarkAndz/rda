@@ -23,7 +23,9 @@ export async function GET(req: Request) {
   const sp = url.searchParams;
   const statusRaw = (sp.get('status') || '').toUpperCase();
   const validStatuses = new Set(['PENDING', 'COMPLETED', 'CANCELLED']);
-  const statusFilter = validStatuses.has(statusRaw) ? statusRaw : undefined;
+  const statusFilter = validStatuses.has(statusRaw)
+    ? (statusRaw as 'PENDING' | 'COMPLETED' | 'CANCELLED')
+    : undefined;
   const fromStr = sp.get('from') || undefined;
   const toStr = sp.get('to') || undefined;
   const fromDate = fromStr ? new Date(fromStr) : undefined;
@@ -33,7 +35,7 @@ export async function GET(req: Request) {
 
   const where = {
     customerId: session.user.id as string,
-    ...(statusFilter ? { status: statusFilter as any } : {}),
+    ...(statusFilter ? { status: statusFilter } : {}),
     ...(fromDate || toDate
       ? {
           createdAt: { ...(fromDate ? { gte: fromDate } : {}), ...(toDate ? { lte: toDate } : {}) },
