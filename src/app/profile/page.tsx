@@ -160,9 +160,25 @@ export default async function ProfilePage({
       <section className="rounded-lg bg-white p-6 shadow">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold">Order History</h2>
-          <span className="text-sm text-gray-500">
-            {totalCount} order{totalCount === 1 ? '' : 's'}
-          </span>
+          <div className="flex items-center gap-3">
+            <a
+              href={(() => {
+                const qp = new URLSearchParams();
+                if (statusFilter) qp.set('status', statusFilter);
+                if (fromStr) qp.set('from', fromStr);
+                if (toStr) qp.set('to', toStr);
+                if (sort === 'oldest') qp.set('sort', 'oldest');
+                const q = qp.toString();
+                return `/api/profile/orders/export.csv${q ? `?${q}` : ''}`;
+              })()}
+              className="rounded border px-3 py-1 text-sm hover:bg-gray-50"
+            >
+              Export CSV
+            </a>
+            <span className="text-sm text-gray-500">
+              {totalCount} order{totalCount === 1 ? '' : 's'}
+            </span>
+          </div>
         </div>
 
         {/* Filters */}
