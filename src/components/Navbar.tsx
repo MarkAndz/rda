@@ -2,10 +2,33 @@
 
 import Link from 'next/link';
 import { AuthButton } from './auth/AuthButton';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+
+function useCheckoutCount() {
+  const [count, setCount] = useState<number>(0);
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch('/api/checkout/count', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = (await res.json()) as { count?: number };
+        if (!cancelled) setCount(data.count ?? 0);
+      } catch {}
+    }
+    load();
+    const id = setInterval(load, 10_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
+  return count;
+}
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const checkoutCount = useCheckoutCount();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -43,6 +66,14 @@ export function Navbar() {
 
           <div className="flex items-center">
             <div className="hidden sm:ml-6 sm:flex sm:items-center">
+              <Link href="/checkout" className="relative mr-3 text-sm text-gray-700">
+                Checkout
+                {checkoutCount > 0 && (
+                  <span className="absolute -top-2 -right-3 rounded-full bg-blue-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                    {checkoutCount}
+                  </span>
+                )}
+              </Link>
               <AuthButton />
             </div>
 
@@ -114,6 +145,14 @@ export function Navbar() {
         </div>
         <div className="border-t border-gray-200 pt-4 pb-3">
           <div className="px-3">
+            <Link href="/checkout" className="relative mb-2 block text-sm text-gray-700">
+              Checkout
+              {checkoutCount > 0 && (
+                <span className="ml-2 rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-semibold text-white">
+                  {checkoutCount}
+                </span>
+              )}
+            </Link>
             <AuthButton />
           </div>
         </div>
