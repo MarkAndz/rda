@@ -156,7 +156,11 @@ describe('Checkout items API', () => {
           findFirst: vi.fn().mockResolvedValue({ id: 'c1' }),
           update: vi.fn().mockResolvedValue({ id: 'c1' }),
         },
-        order: { findFirst: vi.fn().mockResolvedValue({ id: 'o1' }), update: vi.fn(), delete: vi.fn() },
+        order: {
+          findFirst: vi.fn().mockResolvedValue({ id: 'o1' }),
+          update: vi.fn(),
+          delete: vi.fn(),
+        },
         orderItem: {
           findUnique: vi.fn().mockResolvedValue({ quantity: 2, priceCentsAtPurchase: 250 }),
           delete: vi.fn(),
@@ -210,7 +214,11 @@ describe('Checkout items API', () => {
           findFirst: vi.fn().mockResolvedValue({ id: 'c1' }),
           update: vi.fn().mockResolvedValue({ id: 'c1' }),
         },
-        order: { findFirst: vi.fn().mockResolvedValue({ id: 'o1' }), update: vi.fn(), delete: vi.fn() },
+        order: {
+          findFirst: vi.fn().mockResolvedValue({ id: 'o1' }),
+          update: vi.fn(),
+          delete: vi.fn(),
+        },
         orderItem: {
           findUnique: vi.fn().mockResolvedValue({ quantity: 1, priceCentsAtPurchase: 250 }),
           update: vi.fn(),
