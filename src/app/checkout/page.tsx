@@ -30,7 +30,15 @@ export default async function CheckoutPage({
         ? 'Unexpected error. Please try again.'
         : err === 'missing'
           ? 'Missing checkout.'
-          : undefined;
+          : err === 'soldout'
+            ? 'One or more items became sold out.'
+            : err === 'expired'
+              ? 'One or more items have expired.'
+              : err === 'notfound'
+                ? 'That item is no longer available.'
+                : err === 'unauth'
+                  ? 'Please sign in to update your checkout.'
+                  : undefined;
 
   const checkout = await prisma.checkout.findFirst({
     where: { customerId: session.user.id, status: 'PENDING' },
@@ -48,6 +56,7 @@ export default async function CheckoutPage({
             select: {
               quantity: true,
               priceCentsAtPurchase: true,
+              itemId: true,
               item: { select: { name: true } },
             },
           },
@@ -58,6 +67,20 @@ export default async function CheckoutPage({
   });
 
   if (!checkout) {
+    return (
+      <div className="mx-auto max-w-3xl p-8 text-center">
+        <h1 className="mb-4 text-2xl font-bold">Checkout</h1>
+        <p className="text-gray-600">Your checkout is empty.</p>
+      </div>
+    );
+  }
+
+  // If checkout exists but has no items across all orders, show empty state
+  const totalItems = checkout.orders.reduce(
+    (sum, o) => sum + o.items.reduce((s, it) => s + it.quantity, 0),
+    0,
+  );
+  if (totalItems === 0) {
     return (
       <div className="mx-auto max-w-3xl p-8 text-center">
         <h1 className="mb-4 text-2xl font-bold">Checkout</h1>
@@ -78,10 +101,56 @@ export default async function CheckoutPage({
         {checkout.orders.map((o) => (
           <div key={o.id} className="rounded border p-4">
             <h2 className="mb-2 text-lg font-semibold">{o.restaurant?.name}</h2>
-            <ul className="list-disc pl-5">
+            <ul className="pl-1">
               {o.items.map((it, idx) => (
-                <li key={idx} className="text-sm text-gray-800">
-                  {it.item?.name} × {it.quantity} — €{(it.priceCentsAtPurchase / 100).toFixed(2)}
+                <li
+                  key={idx}
+                  className="flex items-center justify-between py-1 text-sm text-gray-800"
+                >
+                  <div className="mr-2 truncate">
+                    {it.item?.name} — €{(it.priceCentsAtPurchase / 100).toFixed(2)}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <form action="/api/checkout/items" method="post" className="inline">
+                      <input type="hidden" name="itemId" value={it.itemId || ''} />
+                      <input type="hidden" name="op" value="dec" />
+                      <button
+                        className="rounded border px-2 py-0.5 text-xs"
+                        formAction="/api/checkout/items"
+                        formMethod="post"
+                        aria-label={`Decrease ${it.item?.name}`}
+                        title={it.quantity <= 1 ? 'Use Remove to delete item' : 'Decrease quantity'}
+                        disabled={it.quantity <= 1}
+                      >
+                        -
+                      </button>
+                    </form>
+                    <span className="min-w-6 text-center tabular-nums">{it.quantity}</span>
+                    <form action="/api/checkout/items" method="post" className="inline">
+                      <input type="hidden" name="itemId" value={it.itemId || ''} />
+                      <input type="hidden" name="op" value="inc" />
+                      <button
+                        className="rounded border px-2 py-0.5 text-xs"
+                        formAction="/api/checkout/items"
+                        formMethod="post"
+                        aria-label={`Increase ${it.item?.name}`}
+                      >
+                        +
+                      </button>
+                    </form>
+                    <form action="/api/checkout/items" method="post" className="inline">
+                      <input type="hidden" name="itemId" value={it.itemId || ''} />
+                      <input type="hidden" name="op" value="remove" />
+                      <button
+                        className="rounded border px-2 py-0.5 text-xs text-red-700"
+                        formAction="/api/checkout/items"
+                        formMethod="post"
+                        aria-label={`Remove ${it.item?.name}`}
+                      >
+                        Remove
+                      </button>
+                    </form>
+                  </div>
                 </li>
               ))}
             </ul>

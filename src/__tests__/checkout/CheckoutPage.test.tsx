@@ -65,4 +65,50 @@ describe('CheckoutPage', () => {
     expect(html).toContain('Burger');
     expect(html).toContain('Order total');
   });
+
+  it('disables decrement button when quantity is 1', async () => {
+    const { auth, prisma } = await getMocks();
+    auth.mockResolvedValue({ user: { id: 'u1' } });
+    prisma.checkout.findFirst.mockResolvedValue({
+      id: 'c1',
+      subtotalCents: 500,
+      taxCents: 0,
+      feeCents: 0,
+      totalCents: 500,
+      orders: [
+        {
+          id: 'o1',
+          restaurant: { name: 'Test Resto' },
+          items: [
+            { quantity: 1, priceCentsAtPurchase: 500, itemId: 'i1', item: { name: 'Burger' } },
+          ],
+          totalCents: 500,
+        },
+      ],
+    });
+    const { default: Page } = await import('@/app/checkout/page');
+    const el = await Page();
+    const html = renderToStaticMarkup(el as unknown as React.ReactElement);
+    expect(html).toContain('disabled');
+  });
+
+  it('shows empty state when checkout exists but no items', async () => {
+    const { auth, prisma } = await getMocks();
+    auth.mockResolvedValue({ user: { id: 'u1' } });
+    prisma.checkout.findFirst.mockResolvedValue({
+      id: 'c1',
+      subtotalCents: 0,
+      taxCents: 0,
+      feeCents: 0,
+      totalCents: 0,
+      orders: [
+        { id: 'o1', restaurant: { name: 'R1' }, items: [], totalCents: 0 },
+        { id: 'o2', restaurant: { name: 'R2' }, items: [], totalCents: 0 },
+      ],
+    });
+    const { default: Page } = await import('@/app/checkout/page');
+    const el = await Page();
+    const html = renderToStaticMarkup(el as unknown as React.ReactElement);
+    expect(html).toContain('Your checkout is empty');
+  });
 });
