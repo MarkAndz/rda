@@ -44,8 +44,8 @@ async function adjustQuantity(userId: string, itemId: string, delta: -1 | 1) {
       });
     }
 
-  let appliedDelta: number = delta;
-  let orderDeleted = false;
+    let appliedDelta: number = delta;
+    let orderDeleted = false;
     if (oi.quantity + delta <= 0) {
       appliedDelta = -oi.quantity;
       await tx.orderItem.delete({ where: { orderId_itemId: { orderId: order.id, itemId } } });
@@ -69,7 +69,7 @@ async function adjustQuantity(userId: string, itemId: string, delta: -1 | 1) {
         data: { totalCents: { increment: price } },
       });
     }
-  const checkoutUpdate = await tx.checkout.update({
+    const checkoutUpdate = await tx.checkout.update({
       where: { id: checkout.id },
       data: { subtotalCents: { increment: price }, totalCents: { increment: price } },
     });
@@ -116,7 +116,7 @@ async function removeItem(userId: string, itemId: string) {
         data: { totalCents: { increment: deltaTotal } },
       });
     }
-  const checkoutUpdate = await tx.checkout.update({
+    const checkoutUpdate = await tx.checkout.update({
       where: { id: checkout.id },
       data: { subtotalCents: { increment: deltaTotal }, totalCents: { increment: deltaTotal } },
     });
