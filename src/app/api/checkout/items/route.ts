@@ -44,12 +44,17 @@ async function adjustQuantity(userId: string, itemId: string, delta: -1 | 1) {
       });
     }
 
-    let appliedDelta: number = delta;
-    let removedItem = false;
+  let appliedDelta: number = delta;
+  let orderDeleted = false;
     if (oi.quantity + delta <= 0) {
       appliedDelta = -oi.quantity;
       await tx.orderItem.delete({ where: { orderId_itemId: { orderId: order.id, itemId } } });
-      removedItem = true;
+      // If order is now empty, clean it up
+      const remaining = await tx.orderItem.count({ where: { orderId: order.id } });
+      if (remaining === 0) {
+        await tx.order.delete({ where: { id: order.id } });
+        orderDeleted = true;
+      }
     } else {
       await tx.orderItem.update({
         where: { orderId_itemId: { orderId: order.id, itemId } },
@@ -58,18 +63,16 @@ async function adjustQuantity(userId: string, itemId: string, delta: -1 | 1) {
     }
 
     const price = oi.priceCentsAtPurchase * appliedDelta;
-    await tx.order.update({ where: { id: order.id }, data: { totalCents: { increment: price } } });
-    const checkoutUpdate = await tx.checkout.update({
+    if (!orderDeleted) {
+      await tx.order.update({
+        where: { id: order.id },
+        data: { totalCents: { increment: price } },
+      });
+    }
+  const checkoutUpdate = await tx.checkout.update({
       where: { id: checkout.id },
       data: { subtotalCents: { increment: price }, totalCents: { increment: price } },
     });
-    // If an item was removed and the order has no remaining items, delete the empty order
-    if (removedItem) {
-      const remaining = await tx.orderItem.count({ where: { orderId: order.id } });
-      if (remaining === 0) {
-        await tx.order.delete({ where: { id: order.id } });
-      }
-    }
     return { status: 200 as const, body: { ok: true, checkoutId: checkoutUpdate.id } };
   });
 }
@@ -95,24 +98,28 @@ async function removeItem(userId: string, itemId: string) {
     if (!oi) return { status: 404 as const, body: { error: 'Item not in checkout' } };
 
     await tx.orderItem.delete({ where: { orderId_itemId: { orderId: order.id, itemId } } });
+    let orderDeleted = false;
+    // If order is now empty, clean it up
+    const remainingAfterDelete = await tx.orderItem.count({ where: { orderId: order.id } });
+    if (remainingAfterDelete === 0) {
+      await tx.order.delete({ where: { id: order.id } });
+      orderDeleted = true;
+    }
     await tx.item.update({
       where: { id: itemId },
       data: { quantityAvailable: { increment: oi.quantity } },
     });
     const deltaTotal = -(oi.quantity * oi.priceCentsAtPurchase);
-    await tx.order.update({
-      where: { id: order.id },
-      data: { totalCents: { increment: deltaTotal } },
-    });
-    const checkoutUpdate = await tx.checkout.update({
+    if (!orderDeleted) {
+      await tx.order.update({
+        where: { id: order.id },
+        data: { totalCents: { increment: deltaTotal } },
+      });
+    }
+  const checkoutUpdate = await tx.checkout.update({
       where: { id: checkout.id },
       data: { subtotalCents: { increment: deltaTotal }, totalCents: { increment: deltaTotal } },
     });
-    // If the order has no remaining items, delete the empty order to keep checkout tidy
-    const remaining = await tx.orderItem.count({ where: { orderId: order.id } });
-    if (remaining === 0) {
-      await tx.order.delete({ where: { id: order.id } });
-    }
     return { status: 200 as const, body: { ok: true, checkoutId: checkoutUpdate.id } };
   });
 }

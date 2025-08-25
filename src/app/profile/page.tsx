@@ -84,9 +84,10 @@ export default async function ProfilePage({
   };
   const skip = (page - 1) * pageSize;
 
+  const whereWithItems = { ...where, items: { some: {} } } as const;
   const [orders, totalCount, accounts] = await Promise.all([
     prisma.order.findMany({
-      where,
+      where: whereWithItems,
       orderBy,
       skip,
       take: pageSize,
@@ -105,7 +106,7 @@ export default async function ProfilePage({
         },
       },
     }) as Promise<OrderRow[]>,
-    prisma.order.count({ where }),
+    prisma.order.count({ where: whereWithItems }),
     prisma.account.findMany({
       where: { userId: session.user.id },
       select: { provider: true, providerAccountId: true },
