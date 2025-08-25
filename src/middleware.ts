@@ -15,6 +15,7 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/dashboard') ||
     request.nextUrl.pathname.startsWith('/profile') ||
     request.nextUrl.pathname.startsWith('/checkout') ||
+    request.nextUrl.pathname.startsWith('/debug') ||
     request.nextUrl.pathname.includes('/edit') ||
     request.nextUrl.pathname.includes('/create');
 
@@ -35,6 +36,7 @@ export const config = {
     '/dashboard/:path*',
     '/profile/:path*',
     '/checkout',
+    '/debug/:path*',
     '/restaurant/create',
     '/restaurant/:path*/edit',
     '/item/create',
