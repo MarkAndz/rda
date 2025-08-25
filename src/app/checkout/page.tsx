@@ -89,6 +89,17 @@ export default async function CheckoutPage({
     );
   }
 
+  // Filter out any orders that may have become empty
+  const orders = checkout.orders.filter((o) => o.items.length > 0);
+  if (orders.length === 0) {
+    return (
+      <div className="mx-auto max-w-3xl p-8 text-center">
+        <h1 className="mb-4 text-2xl font-bold">Checkout</h1>
+        <p className="text-gray-600">Your checkout is empty.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-3xl p-8">
       <h1 className="mb-4 text-2xl font-bold">Checkout</h1>
@@ -98,7 +109,7 @@ export default async function CheckoutPage({
         </div>
       ) : null}
       <div className="space-y-4">
-        {checkout.orders.map((o) => (
+        {orders.map((o) => (
           <div key={o.id} className="rounded border p-4">
             <h2 className="mb-2 text-lg font-semibold">{o.restaurant?.name}</h2>
             <ul className="pl-1">

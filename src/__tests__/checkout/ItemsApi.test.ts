@@ -156,10 +156,11 @@ describe('Checkout items API', () => {
           findFirst: vi.fn().mockResolvedValue({ id: 'c1' }),
           update: vi.fn().mockResolvedValue({ id: 'c1' }),
         },
-        order: { findFirst: vi.fn().mockResolvedValue({ id: 'o1' }), update: vi.fn() },
+        order: { findFirst: vi.fn().mockResolvedValue({ id: 'o1' }), update: vi.fn(), delete: vi.fn() },
         orderItem: {
           findUnique: vi.fn().mockResolvedValue({ quantity: 2, priceCentsAtPurchase: 250 }),
           delete: vi.fn(),
+          count: vi.fn().mockResolvedValue(0),
         },
         item: { update: vi.fn() },
       });
@@ -209,11 +210,12 @@ describe('Checkout items API', () => {
           findFirst: vi.fn().mockResolvedValue({ id: 'c1' }),
           update: vi.fn().mockResolvedValue({ id: 'c1' }),
         },
-        order: { findFirst: vi.fn().mockResolvedValue({ id: 'o1' }), update: vi.fn() },
+        order: { findFirst: vi.fn().mockResolvedValue({ id: 'o1' }), update: vi.fn(), delete: vi.fn() },
         orderItem: {
           findUnique: vi.fn().mockResolvedValue({ quantity: 1, priceCentsAtPurchase: 250 }),
           update: vi.fn(),
           delete: vi.fn(),
+          count: vi.fn().mockResolvedValue(0),
         },
         item: { update: vi.fn() },
       });
@@ -386,5 +388,70 @@ describe('Checkout items API', () => {
     const mod = await import('@/app/api/checkout/items/route');
     const res = await mod.DELETE(new Request('http://x/api/checkout/items?itemId=i1'));
     expect(res.status).toBe(401);
+  });
+
+  it('decrement to zero deletes the empty order (PATCH)', async () => {
+    const { auth } = await getMocks();
+    auth.mockResolvedValue({ user: { id: 'u1' } });
+    const dbMod = await import('@/lib/db');
+    const orderDelete = vi.fn();
+    (dbMod as any).prisma.$transaction = (fn: any) =>
+      fn({
+        checkout: {
+          findFirst: vi.fn().mockResolvedValue({ id: 'c1' }),
+          update: vi.fn().mockResolvedValue({ id: 'c1' }),
+        },
+        order: {
+          findFirst: vi.fn().mockResolvedValue({ id: 'o1' }),
+          update: vi.fn(),
+          delete: orderDelete,
+        },
+        orderItem: {
+          findUnique: vi.fn().mockResolvedValue({ quantity: 1, priceCentsAtPurchase: 250 }),
+          update: vi.fn(),
+          delete: vi.fn(),
+          count: vi.fn().mockResolvedValue(0),
+        },
+        item: { update: vi.fn() },
+      });
+    const mod = await import('@/app/api/checkout/items/route');
+    const res = await mod.PATCH(
+      new Request('http://x/api/checkout/items', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ itemId: 'i1', delta: -1 }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect(orderDelete).toHaveBeenCalled();
+  });
+
+  it('removing last item deletes the empty order (DELETE)', async () => {
+    const { auth } = await getMocks();
+    auth.mockResolvedValue({ user: { id: 'u1' } });
+    const dbMod = await import('@/lib/db');
+    const orderDelete = vi.fn();
+    (dbMod as any).prisma.$transaction = (fn: any) =>
+      fn({
+        checkout: {
+          findFirst: vi.fn().mockResolvedValue({ id: 'c1' }),
+          update: vi.fn().mockResolvedValue({ id: 'c1' }),
+        },
+        order: {
+          findFirst: vi.fn().mockResolvedValue({ id: 'o1' }),
+          update: vi.fn(),
+          delete: orderDelete,
+        },
+        orderItem: {
+          findUnique: vi.fn().mockResolvedValue({ quantity: 1, priceCentsAtPurchase: 100 }),
+          delete: vi.fn(),
+          count: vi.fn().mockResolvedValue(0),
+        },
+        item: { update: vi.fn() },
+      });
+    const mod = await import('@/app/api/checkout/items/route');
+    const res = await mod.DELETE(new Request('http://x/api/checkout/items?itemId=i1'));
+    expect(res.status).toBe(200);
+    expect(orderDelete).toHaveBeenCalled();
   });
 });
