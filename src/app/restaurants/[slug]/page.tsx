@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db';
 import { formatCents, formatDateTime } from '@/lib/format';
 import Link from 'next/link';
 import Countdown from '@/components/restaurants/Countdown';
+import AddToCartButton from '@/components/restaurants/AddToCartButton';
+import QuantityLive from '@/components/restaurants/QuantityLive';
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -158,18 +160,23 @@ export default async function RestaurantDetailsPage({ params, searchParams }: Pa
                   </div>
                 ) : null}
                 <div className="mt-3 flex items-center justify-between text-xs text-gray-600">
-                  <span>Quantity: {it.quantityAvailable}</span>
+                  <span>
+                    Quantity: <QuantityLive itemId={it.id} initial={it.quantityAvailable} />
+                  </span>
                   {it.quantityAvailable > 0 ? (
-                    <form method="post" action="/api/checkout/add">
-                      <input type="hidden" name="itemId" value={it.id} />
-                      <button
-                        type="submit"
-                        className="rounded border px-2 py-1 text-xs hover:bg-gray-50"
-                        aria-label={`Buy ${it.name}`}
-                      >
-                        Buy
-                      </button>
-                    </form>
+                    <div className="flex items-center gap-2">
+                      <form method="post" action="/api/checkout/add">
+                        <input type="hidden" name="itemId" value={it.id} />
+                        <button
+                          type="submit"
+                          className="rounded border px-2 py-1 text-xs hover:bg-gray-50"
+                          aria-label={`Buy ${it.name}`}
+                        >
+                          Buy
+                        </button>
+                      </form>
+                      <AddToCartButton itemId={it.id} available={it.quantityAvailable} />
+                    </div>
                   ) : null}
                 </div>
               </li>
