@@ -3,23 +3,25 @@ import { prisma } from '@/lib/db';
 import { formatCents, formatDateTime } from '@/lib/format';
 import Link from 'next/link';
 
-type Params = {
-  params: { slug: string };
+type PageProps = {
+  params: Promise<{ slug: string }>;
   searchParams?: Promise<{ [k: string]: string | string[] | undefined }>;
 };
 
-export async function generateMetadata({ params }: Params) {
-  const r = await prisma.restaurant.findUnique({
-    where: { slug: params.slug, isActive: true },
+export async function generateMetadata({ params }: PageProps) {
+  const { slug } = await params;
+  const r = await prisma.restaurant.findFirst({
+    where: { slug, isActive: true },
     select: { name: true },
   });
   return { title: r?.name ? `${r.name} | RDA` : 'Restaurant | RDA' };
 }
 
-export default async function RestaurantDetailsPage({ params, searchParams }: Params) {
+export default async function RestaurantDetailsPage({ params, searchParams }: PageProps) {
+  const { slug } = await params;
   const now = new Date();
-  const restaurant = await prisma.restaurant.findUnique({
-    where: { slug: params.slug, isActive: true },
+  const restaurant = await prisma.restaurant.findFirst({
+    where: { slug, isActive: true },
     select: {
       id: true,
       name: true,
