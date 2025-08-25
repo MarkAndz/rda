@@ -12,9 +12,13 @@
     "format:check": "prettier --check .",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
+    "db:seed": "prisma db seed",
     "test": "vitest",
     "test:cov": "vitest --coverage",
     "test:ci": "vitest --coverage --run"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",

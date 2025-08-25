@@ -3,29 +3,33 @@ import { prisma } from '@/lib/db';
 import { formatCents, formatDateTime } from '@/lib/format';
 import Link from 'next/link';
 
-type Params = {
-  params: { slug: string };
+type PageProps = {
+  params: Promise<{ slug: string }>;
   searchParams?: Promise<{ [k: string]: string | string[] | undefined }>;
 };
 
-export async function generateMetadata({ params }: Params) {
+export async function generateMetadata({ params }: PageProps) {
+  const { slug } = await params;
   const r = await prisma.restaurant.findUnique({
-    where: { slug: params.slug, isActive: true },
-    select: { name: true },
+    where: { slug },
+    select: { name: true, isActive: true },
   });
-  return { title: r?.name ? `${r.name} | RDA` : 'Restaurant | RDA' };
+  const name = r && r.isActive ? r.name : undefined;
+  return { title: name ? `${name} | RDA` : 'Restaurant | RDA' };
 }
 
-export default async function RestaurantDetailsPage({ params, searchParams }: Params) {
+export default async function RestaurantDetailsPage({ params, searchParams }: PageProps) {
+  const { slug } = await params;
   const now = new Date();
   const restaurant = await prisma.restaurant.findUnique({
-    where: { slug: params.slug, isActive: true },
+    where: { slug },
     select: {
       id: true,
       name: true,
       city: true,
       description: true,
       imageUrl: true,
+      isActive: true,
       items: {
         where: { expiresAt: { gt: now } },
         orderBy: [{ expiresAt: 'asc' }, { name: 'asc' }],
@@ -42,7 +46,7 @@ export default async function RestaurantDetailsPage({ params, searchParams }: Pa
     },
   });
 
-  if (!restaurant) {
+  if (!restaurant || restaurant.isActive === false) {
     notFound();
   }
 

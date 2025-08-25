@@ -3,16 +3,19 @@
 This is a Next.js 15 App Router project using Auth.js (NextAuth v5) and Prisma with SQLite for local development.
 
 What you’ll get locally:
+
 - Public restaurant catalog and details
 - Auth via GitHub/Google (requires OAuth app keys)
 - Profile with order history (filters/sort/export)
 - Buy flow: add item to checkout and place order
 
 ### 1) Requirements
+
 - Node 20+ and npm
 - VS Code (recommended). Trust the workspace when prompted.
 
 Recommended VS Code extensions:
+
 - ESLint, Prettier, Tailwind CSS IntelliSense
 
 ### 2) Install dependencies
@@ -30,6 +33,7 @@ cp env.example .env.local
 ```
 
 Required minimum for local dev:
+
 - `DATABASE_URL` — keep default `file:./dev.db` for SQLite
 - `NEXTAUTH_SECRET` — generate a random string
 - `NEXTAUTH_URL` — `http://localhost:3000`
@@ -45,10 +49,12 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
 
 Optional (to sign in with OAuth):
+
 - GitHub: `GITHUB_ID`, `GITHUB_SECRET`
 - Google: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
 
 OAuth callback URLs you’ll need to set in the provider config:
+
 - GitHub callback: `http://localhost:3000/api/auth/callback/github`
 - Google callback: `http://localhost:3000/api/auth/callback/google`
 
@@ -70,11 +76,20 @@ npx prisma studio
 ```
 
 Minimal data to test the buy flow:
+
 - Create a Restaurant (set `isActive = true`).
 - Create at least one Item for that restaurant with:
-	- `discountedPriceCents > 0`
-	- `quantityAvailable > 0`
-	- `expiresAt` in the future
+  - `discountedPriceCents > 0`
+  - `quantityAvailable > 0`
+  - `expiresAt` in the future
+
+Seed convenience (recommended):
+
+```bash
+npm run db:seed
+```
+
+This creates two active restaurants and a few items with stock and future expiries.
 
 ### 5) Run the app
 
@@ -138,3 +153,8 @@ npx prisma migrate reset --force
 - Vitest + Testing Library (jsdom)
 
 Happy hacking!
+
+## Local debug helpers
+
+- Create sample order history for the signed-in user (dev only):
+  - Sign in, then send a POST to `/debug/seed-user-orders` (e.g. via curl or your browser using a tool like REST Client). This will create a completed checkout with a couple of orders and items if restaurants/items exist. Disabled in production.
