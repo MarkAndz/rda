@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import { formatCents, formatDateTime } from '@/lib/format';
 import Link from 'next/link';
+import Countdown from '@/components/restaurants/Countdown';
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -124,11 +125,14 @@ export default async function RestaurantDetailsPage({ params, searchParams }: Pa
               <li key={it.id} className="rounded border p-4">
                 <div className="mb-1 flex items-center justify-between">
                   <h3 className="text-base font-semibold text-gray-900">{it.name}</h3>
-                  {it.quantityAvailable === 0 ? (
-                    <span className="rounded bg-gray-200 px-2 py-0.5 text-xs text-gray-700">
-                      Sold out
-                    </span>
-                  ) : null}
+                  <div className="flex items-center gap-2">
+                    {it.quantityAvailable === 0 ? (
+                      <span className="rounded bg-gray-200 px-2 py-0.5 text-xs text-gray-700">
+                        Sold out
+                      </span>
+                    ) : null}
+                    <Countdown expiresAt={it.expiresAt} />
+                  </div>
                 </div>
                 <div className="mb-2 text-sm">
                   <span className="font-medium text-green-700">
@@ -142,8 +146,15 @@ export default async function RestaurantDetailsPage({ params, searchParams }: Pa
                   Expires: {formatDateTime(it.expiresAt)}
                 </div>
                 {it.allergens.length > 0 ? (
-                  <div className="text-xs text-gray-700">
-                    Allergens: {it.allergens.map((a) => a.name).join(', ')}
+                  <div className="flex flex-wrap gap-1 text-xs text-gray-700">
+                    {it.allergens.map((a) => (
+                      <span
+                        key={a.name}
+                        className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-700"
+                      >
+                        {a.name}
+                      </span>
+                    ))}
                   </div>
                 ) : null}
                 <div className="mt-3 flex items-center justify-between text-xs text-gray-600">
