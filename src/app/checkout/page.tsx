@@ -49,6 +49,7 @@ export default async function CheckoutPage({
       feeCents: true,
       totalCents: true,
       orders: {
+        where: { items: { some: {} } },
         select: {
           id: true,
           restaurant: { select: { name: true } },

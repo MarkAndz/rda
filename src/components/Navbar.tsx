@@ -16,11 +16,17 @@ function useCheckoutCount() {
         if (!cancelled) setCount(data.count ?? 0);
       } catch {}
     }
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { count?: number };
+      if (typeof detail?.count === 'number') setCount(detail.count);
+    };
     load();
     const id = setInterval(load, 10_000);
+    window.addEventListener('checkout:count', handler as EventListener);
     return () => {
       cancelled = true;
       clearInterval(id);
+      window.removeEventListener('checkout:count', handler as EventListener);
     };
   }, []);
   return count;
