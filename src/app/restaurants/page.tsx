@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db';
+import CreateRestaurantButton from '@/components/restaurants/CreateRestaurantButton';
 
 export const metadata = {
   title: 'Restaurants | RDA',
@@ -41,6 +42,10 @@ export default async function RestaurantsPage({ searchParams }: { searchParams: 
     <div className="mx-auto max-w-6xl p-8">
       <h1 className="mb-6 text-2xl font-bold">Restaurants</h1>
 
+      <div className="mb-6 flex justify-end">
+        <CreateRestaurantButton />
+      </div>
+
       {restaurants.length === 0 ? (
         <div className="rounded-lg bg-white p-6 text-center text-gray-600 shadow">
           No restaurants found
@@ -62,9 +67,8 @@ export default async function RestaurantsPage({ searchParams }: { searchParams: 
       {totalPages > 1 && (
         <div className="mt-6 flex items-center justify-end gap-2">
           <a
-            className={`rounded border px-3 py-1 text-sm ${
-              page <= 1 ? 'pointer-events-none opacity-50' : 'hover:bg-gray-50'
-            }`}
+            className={`rounded border px-3 py-1 text-sm ${page <= 1 ? 'pointer-events-none opacity-50' : 'hover:bg-gray-50'
+              }`}
             href={buildHref(page - 1)}
             aria-disabled={page <= 1}
           >
@@ -74,9 +78,8 @@ export default async function RestaurantsPage({ searchParams }: { searchParams: 
             Page {page} of {totalPages}
           </span>
           <a
-            className={`rounded border px-3 py-1 text-sm ${
-              page >= totalPages ? 'pointer-events-none opacity-50' : 'hover:bg-gray-50'
-            }`}
+            className={`rounded border px-3 py-1 text-sm ${page >= totalPages ? 'pointer-events-none opacity-50' : 'hover:bg-gray-50'
+              }`}
             href={buildHref(page + 1)}
             aria-disabled={page >= totalPages}
           >
