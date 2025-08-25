@@ -10,24 +10,26 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
-  const r = await prisma.restaurant.findFirst({
-    where: { slug, isActive: true },
-    select: { name: true },
+  const r = await prisma.restaurant.findUnique({
+    where: { slug },
+    select: { name: true, isActive: true },
   });
-  return { title: r?.name ? `${r.name} | RDA` : 'Restaurant | RDA' };
+  const name = r && r.isActive ? r.name : undefined;
+  return { title: name ? `${name} | RDA` : 'Restaurant | RDA' };
 }
 
 export default async function RestaurantDetailsPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
   const now = new Date();
-  const restaurant = await prisma.restaurant.findFirst({
-    where: { slug, isActive: true },
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { slug },
     select: {
       id: true,
       name: true,
       city: true,
       description: true,
       imageUrl: true,
+      isActive: true,
       items: {
         where: { expiresAt: { gt: now } },
         orderBy: [{ expiresAt: 'asc' }, { name: 'asc' }],
@@ -44,7 +46,7 @@ export default async function RestaurantDetailsPage({ params, searchParams }: Pa
     },
   });
 
-  if (!restaurant) {
+  if (!restaurant || restaurant.isActive === false) {
     notFound();
   }
 
