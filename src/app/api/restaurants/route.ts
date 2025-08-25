@@ -18,8 +18,22 @@ export async function POST(req: NextRequest) {
 
         const slug = slugify(data.name);
 
-        const restaurant = await prisma.restaurant.create({
-            data: {
+        const restaurant = await prisma.restaurant.upsert({
+            where: { slug },
+            update: {
+                name: data.name,
+                address: data.address,
+                city: data.city,
+                country: data.country,
+                postcode: data.postcode,
+                latitude: data.latitude ? parseFloat(data.latitude) : undefined,
+                timezone: data.timezone,
+                phone: data.phone,
+                email: data.email,
+                description: data.description,
+                imageUrl: data.imageUrl,
+            },
+            create: {
                 name: data.name,
                 slug,
                 address: data.address,
