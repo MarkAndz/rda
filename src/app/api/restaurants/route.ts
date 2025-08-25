@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
         }
 
         const slug = slugify(data.name);
+        console.log("SLUG USED:", slug);
 
         const restaurant = await prisma.restaurant.upsert({
             where: { slug },
@@ -50,8 +51,9 @@ export async function POST(req: NextRequest) {
         });
 
         return NextResponse.json(restaurant, { status: 201 });
-    } catch (error) {
-        console.error(error);
-        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    } catch (error: any) {
+        console.error("API ERROR:", error);
+        return NextResponse.json({ error: error.message || String(error) }, { status: 500 });
     }
 }
+
