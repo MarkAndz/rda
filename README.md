@@ -8,6 +8,18 @@ What you’ll get locally:
 - Auth via GitHub/Google (requires OAuth app keys)
 - Profile with order history (filters/sort/export)
 - Buy flow: add item to checkout and place order
+- Add to cart without redirect with instant navbar badge update
+- Live item quantity updates on the restaurant page; empty orders auto-cleaned when last item is removed
+
+### Quick start
+
+```bash
+npm install
+cp env.example .env.local
+npx prisma migrate dev
+npm run db:seed
+npm run dev
+```
 
 ### 1) Requirements
 
@@ -120,6 +132,12 @@ Run coverage (HTML report at `coverage/index.html`):
 
 ```bash
 npm run test:cov
+```
+
+CI mode (non-watch, with coverage):
+
+```bash
+npm run test:ci
 ```
 
 Coverage thresholds: lines 80%, functions 80%, branches 70%, statements 80%.
