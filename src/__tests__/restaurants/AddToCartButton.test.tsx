@@ -31,4 +31,24 @@ describe('AddToCartButton', () => {
     fireEvent.click(screen.getByRole('button', { name: /add to cart/i }));
     await waitFor(() => expect(screen.getByText(/sold out/i)).toBeInTheDocument());
   });
+
+  it('redirects to sign-in on 401', async () => {
+    const originalLocation = window.location as any;
+    // @ts-ignore test override
+    delete window.location;
+    const assign = vi.fn();
+    // @ts-ignore test override
+    window.location = { href: 'http://localhost/', assign };
+
+    (global.fetch as any).mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 }),
+    );
+    render(<AddToCartButton itemId="i1" />);
+    fireEvent.click(screen.getByRole('button', { name: /add to cart/i }));
+    await waitFor(() => expect(assign).toHaveBeenCalled());
+
+    // restore
+    // @ts-ignore test override
+    window.location = originalLocation;
+  });
 });

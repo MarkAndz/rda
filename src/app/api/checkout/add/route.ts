@@ -3,16 +3,26 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 
 export async function POST(req: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  let itemId: string | undefined;
+  // Peek at headers first to decide response mode on auth failure
   const contentType = req.headers.get('content-type') || '';
   const accept = req.headers.get('accept') || '';
   const isForm = contentType.includes('application/x-www-form-urlencoded');
   const wantsHtml = accept.includes('text/html');
+
+  const session = await auth();
+  if (!session?.user?.id) {
+    // For browser form posts or HTML requests, redirect to sign-in with callback back to referer
+    if (isForm || wantsHtml) {
+      const referer = req.headers.get('referer') || '/';
+      const u = new URL('/auth/signin', req.url);
+      u.searchParams.set('callbackUrl', referer);
+      return NextResponse.redirect(u, { status: 303 });
+    }
+    // For JSON/fetch clients, return 401 JSON
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  let itemId: string | undefined;
   if (contentType.includes('application/json')) {
     const body: unknown = await req.json().catch(() => ({}));
     const parsed = body as { itemId?: string };

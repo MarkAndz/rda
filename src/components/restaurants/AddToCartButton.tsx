@@ -55,10 +55,18 @@ export default function AddToCartButton({ itemId, disabled, available }: Props) 
           else if (res.status === 404) code = 'notfound';
           else if (res.status === 409) code = 'soldout';
         }
-        if (code === 'soldout') showTemp('Sold out');
+        if (code === 'unauth') {
+          try {
+            const current = window.location.href;
+            const url = `/auth/signin?callbackUrl=${encodeURIComponent(current)}`;
+            // Prefer assign to keep history and allow back
+            window.location.assign(url);
+          } catch {
+            showTemp('Sign in required');
+          }
+        } else if (code === 'soldout') showTemp('Sold out');
         else if (code === 'expired') showTemp('Expired');
         else if (code === 'notfound') showTemp('Not available');
-        else if (code === 'unauth') showTemp('Sign in required');
         else showTemp('Error');
         return;
       }
