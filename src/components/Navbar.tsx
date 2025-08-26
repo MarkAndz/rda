@@ -67,6 +67,12 @@ export function Navbar() {
               >
                 About
               </Link>
+              <Link
+                href="/contact"
+                className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600"
+              >
+                Contact Us
+              </Link>
             </div>
           </div>
 
@@ -147,6 +153,12 @@ export function Navbar() {
             className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50"
           >
             About
+          </Link>
+          <Link
+            href="/contact"
+            className="block px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Contact Us
           </Link>
         </div>
         <div className="border-t border-gray-200 pt-4 pb-3">
