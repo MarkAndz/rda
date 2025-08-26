@@ -1,39 +1,51 @@
 import { prisma } from '@/lib/db';
 import CreateRestaurantButton from '@/components/restaurants/CreateRestaurantButton';
+import RestaurantCard from '@/components/restaurants/RestaurantCard';
 
 export const metadata = {
   title: 'Restaurants | RDA',
 };
 
-import RestaurantCard from '@/components/restaurants/RestaurantCard';
-
-type SearchParams = Promise<{
-  page?: string;
-}>;
-
 const PAGE_SIZE = 12;
 
-export default async function RestaurantsPage({ searchParams }: { searchParams: SearchParams }) {
+export default async function RestaurantsPage({ searchParams }: { searchParams: Promise<{ page?: string; search?: string }> }) {
   const params = await searchParams;
   const page = Math.max(1, Number(params?.page) || 1);
+  const search = params?.search?.trim() || '';
   const skip = (page - 1) * PAGE_SIZE;
+
+  // Filter restaurants by item name or allergen name (remove mode: 'insensitive')
+  const where = search
+    ? {
+      isActive: true,
+      items: {
+        some: {
+          OR: [
+            { name: { contains: search } },
+            { allergens: { some: { name: { contains: search } } } },
+          ],
+        },
+      },
+    }
+    : { isActive: true };
 
   const [restaurants, total] = await Promise.all([
     prisma.restaurant.findMany({
-      where: { isActive: true },
+      where,
       orderBy: { name: 'asc' },
       skip,
       take: PAGE_SIZE,
       select: { id: true, slug: true, name: true, city: true, imageUrl: true },
     }),
-    prisma.restaurant.count({ where: { isActive: true } }),
+    prisma.restaurant.count({ where }),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  const buildHref = (target: number) => {
+  const buildHref = (target: number, searchValue = search) => {
     const qp = new URLSearchParams();
     qp.set('page', String(target));
+    if (searchValue) qp.set('search', searchValue);
     const q = qp.toString();
     return `/restaurants${q ? `?${q}` : ''}`;
   };
@@ -41,6 +53,27 @@ export default async function RestaurantsPage({ searchParams }: { searchParams: 
   return (
     <div className="mx-auto max-w-6xl p-8">
       <h1 className="mb-6 text-2xl font-bold">Restaurants</h1>
+
+      {/* Search Bar */}
+      <form
+        className="mb-6 flex items-center gap-2"
+        action="/restaurants"
+        method="get"
+      >
+        <input
+          type="text"
+          name="search"
+          defaultValue={search}
+          placeholder="Search by product name or allergen (e.g. Gluten, Dairy)"
+          className="w-full rounded border px-3 py-2 text-sm"
+        />
+        <button
+          type="submit"
+          className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+        >
+          Search
+        </button>
+      </form>
 
       <div className="mb-6 flex justify-end">
         <CreateRestaurantButton />
