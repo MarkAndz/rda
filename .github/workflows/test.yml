@@ -24,17 +24,17 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
         env:
-          DATABASE_URL: "file:./test.db"
+          DATABASE_URL: 'file:./test.db'
 
       - name: Push Prisma schema to test DB
         run: npx prisma db push
         env:
-          DATABASE_URL: "file:./test.db"
+          DATABASE_URL: 'file:./test.db'
 
       - name: Run tests with coverage
         run: npm run test:ci
         env:
-          DATABASE_URL: "file:./test.db"
+          DATABASE_URL: 'file:./test.db'
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
