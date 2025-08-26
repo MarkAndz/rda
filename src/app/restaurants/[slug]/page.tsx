@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/db';
 import { formatCents, formatDateTime } from '@/lib/format';
 import Link from 'next/link';
-import Countdown from '@/components/restaurants/Countdown';
+import Countdown from '@/components/restaurants/CountdownNoSSR';
 import AddToCartButton from '@/components/restaurants/AddToCartButton';
 import QuantityLive from '@/components/restaurants/QuantityLive';
 

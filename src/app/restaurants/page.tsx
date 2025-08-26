@@ -67,8 +67,9 @@ export default async function RestaurantsPage({ searchParams }: { searchParams: 
       {totalPages > 1 && (
         <div className="mt-6 flex items-center justify-end gap-2">
           <a
-            className={`rounded border px-3 py-1 text-sm ${page <= 1 ? 'pointer-events-none opacity-50' : 'hover:bg-gray-50'
-              }`}
+            className={`rounded border px-3 py-1 text-sm ${
+              page <= 1 ? 'pointer-events-none opacity-50' : 'hover:bg-gray-50'
+            }`}
             href={buildHref(page - 1)}
             aria-disabled={page <= 1}
           >
@@ -78,8 +79,9 @@ export default async function RestaurantsPage({ searchParams }: { searchParams: 
             Page {page} of {totalPages}
           </span>
           <a
-            className={`rounded border px-3 py-1 text-sm ${page >= totalPages ? 'pointer-events-none opacity-50' : 'hover:bg-gray-50'
-              }`}
+            className={`rounded border px-3 py-1 text-sm ${
+              page >= totalPages ? 'pointer-events-none opacity-50' : 'hover:bg-gray-50'
+            }`}
             href={buildHref(page + 1)}
             aria-disabled={page >= totalPages}
           >

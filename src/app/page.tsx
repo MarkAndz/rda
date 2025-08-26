@@ -1,83 +1,156 @@
-import Image from 'next/image';
+import { prisma } from '@/lib/db';
+import { formatCents, formatDateTime } from '@/lib/format';
+import Countdown from '@/components/restaurants/CountdownNoSSR';
+import AddToCartButton from '@/components/restaurants/AddToCartButton';
+import QuantityLive from '@/components/restaurants/QuantityLive';
+import Link from 'next/link';
 
-export default function Home() {
+export const metadata = {
+  title: 'Deals | RDA',
+};
+
+type SearchParams = Promise<{
+  page?: string;
+}>;
+
+const PAGE_SIZE = 12;
+
+export default async function Home({ searchParams }: { searchParams: SearchParams }) {
+  const params = await searchParams;
+  const page = Math.max(1, Number(params?.page) || 1);
+  const skip = (page - 1) * PAGE_SIZE;
+  const now = new Date();
+
+  const where = {
+    expiresAt: { gt: now },
+    quantityAvailable: { gt: 0 },
+    restaurant: { is: { isActive: true } },
+  } as const;
+
+  const [items, total] = await Promise.all([
+    prisma.item.findMany({
+      where,
+      orderBy: [{ expiresAt: 'asc' }, { name: 'asc' }],
+      skip,
+      take: PAGE_SIZE,
+      select: {
+        id: true,
+        name: true,
+        originalPriceCents: true,
+        discountedPriceCents: true,
+        quantityAvailable: true,
+        expiresAt: true,
+        restaurant: { select: { name: true, slug: true } },
+        allergens: { select: { name: true } },
+      },
+    }),
+    prisma.item.count({ where }),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  const buildHref = (target: number) => {
+    const qp = new URLSearchParams();
+    qp.set('page', String(target));
+    const q = qp.toString();
+    return `/${q ? `?${q}` : ''}`;
+  };
+
   return (
-    <div className="grid min-h-screen grid-rows-[20px_1fr_20px] items-center justify-items-center gap-16 p-8 pb-20 font-sans sm:p-20">
-      <main className="row-start-2 flex flex-col items-center gap-[32px] sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-center font-mono text-sm/6 sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{' '}
-            <code className="rounded bg-black/[.05] px-1 py-0.5 font-mono font-semibold dark:bg-white/[.06]">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">Save and see your changes instantly.</li>
-        </ol>
+    <div className="mx-auto max-w-6xl p-8">
+      <h1 className="mb-6 text-2xl font-bold">Available items</h1>
 
-        <div className="flex flex-col items-center gap-4 sm:flex-row">
+      {items.length === 0 ? (
+        <div className="rounded-lg bg-white p-6 text-center text-gray-600 shadow">
+          No available items
+        </div>
+      ) : (
+        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((it) => (
+            <li key={it.id} className="rounded border p-4">
+              <div className="mb-1 flex items-center justify-between">
+                <h3 className="text-base font-semibold text-gray-900">{it.name}</h3>
+                <div className="flex items-center gap-2">
+                  <Countdown expiresAt={it.expiresAt} />
+                </div>
+              </div>
+              <div className="mb-1 text-xs text-gray-600">
+                from{' '}
+                {it.restaurant?.slug ? (
+                  <Link className="hover:underline" href={`/restaurants/${it.restaurant.slug}`}>
+                    {it.restaurant?.name}
+                  </Link>
+                ) : (
+                  <span>{it.restaurant?.name}</span>
+                )}
+              </div>
+              <div className="mb-2 text-sm">
+                <span className="font-medium text-green-700">
+                  {formatCents(it.discountedPriceCents)}
+                </span>{' '}
+                <span className="text-gray-500 line-through">
+                  {formatCents(it.originalPriceCents)}
+                </span>
+              </div>
+              <div className="mb-2 text-xs text-gray-600">
+                Expires: {formatDateTime(it.expiresAt)}
+              </div>
+              {it.allergens.length > 0 ? (
+                <div className="flex flex-wrap gap-1 text-xs text-gray-700">
+                  {it.allergens.map((a) => (
+                    <span
+                      key={a.name}
+                      className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-700"
+                    >
+                      {a.name}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              <div className="mt-3 flex items-center justify-between text-xs text-gray-600">
+                <span>
+                  Quantity: <QuantityLive itemId={it.id} initial={it.quantityAvailable} />
+                </span>
+                <div className="flex items-center gap-2">
+                  <form method="post" action="/api/checkout/add">
+                    <input type="hidden" name="itemId" value={it.id} />
+                    <button
+                      type="submit"
+                      className="rounded border px-2 py-1 text-xs hover:bg-gray-50"
+                      aria-label={`Buy ${it.name}`}
+                    >
+                      Buy
+                    </button>
+                  </form>
+                  <AddToCartButton itemId={it.id} available={it.quantityAvailable} />
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-end gap-2">
           <a
-            className="bg-foreground text-background flex h-10 items-center justify-center gap-2 rounded-full border border-solid border-transparent px-4 text-sm font-medium transition-colors hover:bg-[#383838] sm:h-12 sm:w-auto sm:px-5 sm:text-base dark:hover:bg-[#ccc]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            className={`rounded border px-3 py-1 text-sm ${page <= 1 ? 'pointer-events-none opacity-50' : 'hover:bg-gray-50'}`}
+            href={buildHref(page - 1)}
+            aria-disabled={page <= 1}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
+            Previous
           </a>
+          <span className="text-sm text-gray-600">
+            Page {page} of {totalPages}
+          </span>
           <a
-            className="flex h-10 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-4 text-sm font-medium transition-colors hover:border-transparent hover:bg-[#f2f2f2] sm:h-12 sm:w-auto sm:px-5 sm:text-base md:w-[158px] dark:border-white/[.145] dark:hover:bg-[#1a1a1a]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            className={`rounded border px-3 py-1 text-sm ${page >= totalPages ? 'pointer-events-none opacity-50' : 'hover:bg-gray-50'}`}
+            href={buildHref(page + 1)}
+            aria-disabled={page >= totalPages}
           >
-            Read our docs
+            Next
           </a>
         </div>
-      </main>
-      <footer className="row-start-3 flex flex-wrap items-center justify-center gap-[24px]">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image aria-hidden src="/file.svg" alt="File icon" width={16} height={16} />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image aria-hidden src="/window.svg" alt="Window icon" width={16} height={16} />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image aria-hidden src="/globe.svg" alt="Globe icon" width={16} height={16} />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      )}
     </div>
   );
 }
