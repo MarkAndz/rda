@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     try {
         const data = await req.json();
 
-        if (!data.name || !data.address || !data.city || !data.country || !data.postcode) {
+        if (!data.name || !data.address) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 

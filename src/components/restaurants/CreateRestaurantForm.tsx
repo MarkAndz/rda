@@ -15,12 +15,56 @@ export default function CreateRestaurantForm({ onClose }: { onClose: () => void 
     const [description, setDescription] = useState("");
     const [imageUrl, setImageUrl] = useState("");
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // TODO: Call API or server action to create restaurant
-        alert(`Creating restaurant: ${name}`);
-        onClose();
+
+        try {
+            const res = await fetch("/api/restaurants", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name,
+                    address,
+                    city,
+                    country,
+                    postcode,
+                    latitude: latitude ? parseFloat(latitude) : undefined,
+                    timezone: timeZone,
+                    phone,
+                    email,
+                    description,
+                    imageUrl,
+                }),
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                alert("Error: " + (errorData.error || "Failed to create restaurant"));
+                return;
+            }
+
+            const restaurant = await res.json();
+            console.log("Created restaurant:", restaurant);
+
+            setName("");
+            setAddress("");
+            setCity("");
+            setCountry("");
+            setPostcode("");
+            setLatitude("");
+            setTimeZone("");
+            setPhone("");
+            setEmail("");
+            setDescription("");
+            setImageUrl("");
+
+            onClose();
+        } catch (err) {
+            console.error("API call failed:", err);
+            alert("An unexpected error occurred.");
+        }
     };
+
 
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
@@ -54,7 +98,6 @@ export default function CreateRestaurantForm({ onClose }: { onClose: () => void 
                             placeholder="City"
                             value={city}
                             onChange={e => setCity(e.target.value)}
-                            required
                         />
                     </div>
                     <div>
@@ -64,7 +107,6 @@ export default function CreateRestaurantForm({ onClose }: { onClose: () => void 
                             placeholder="Country"
                             value={country}
                             onChange={e => setCountry(e.target.value)}
-                            required
                         />
                     </div>
                     <div>
@@ -74,7 +116,6 @@ export default function CreateRestaurantForm({ onClose }: { onClose: () => void 
                             placeholder="Postcode"
                             value={postcode}
                             onChange={e => setPostcode(e.target.value)}
-                            required
                         />
                     </div>
                     <div>
