@@ -31,9 +31,13 @@ jobs:
 
       - name: Generate Prisma Client
         run: npm run prisma:generate
+        env:
+          DATABASE_URL: 'file:./test.db'
 
       - name: Prepare test database (Prisma db push)
         run: npx prisma db push
+        env:
+          DATABASE_URL: 'file:./test.db'
 
       - name: Build
         run: npm run build
@@ -43,6 +47,8 @@ jobs:
         run: |
           set -o pipefail
           npm run test:ci | tee vitest-output.txt
+        env:
+          DATABASE_URL: 'file:./test.db'
 
       - name: Upload coverage artifact
         if: always()
