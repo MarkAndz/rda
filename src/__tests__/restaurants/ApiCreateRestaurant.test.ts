@@ -1,8 +1,20 @@
-import { describe, it, expect } from 'vitest';
-import { POST } from '@/app/api/restaurants/route';
+import { describe, it, expect, vi } from 'vitest';
+import { prisma } from '@/lib/db';
+
+// Mock auth to avoid loading NextAuth internals and to control auth state
+vi.mock('@/auth', () => ({ auth: vi.fn() }));
+
+async function getAuth() {
+  const mod = await import('@/auth');
+  return vi.mocked((mod as any).auth as ReturnType<typeof vi.fn>);
+}
 
 describe('POST /api/restaurants', () => {
-  it('should return 400 if required fields are missing', async () => {
+  it('should return 400 if required fields are missing (authenticated)', async () => {
+    const user = await prisma.user.create({ data: { email: 'api400@example.com', name: 'API400' } });
+    const auth = await getAuth();
+    auth.mockResolvedValueOnce({ user: { id: user.id } } as any);
+    const { POST } = await import('@/app/api/restaurants/route');
     const req = {
       json: async () => ({ name: '' }),
     } as any;
@@ -13,6 +25,10 @@ describe('POST /api/restaurants', () => {
   });
 
   it('should create a restaurant with valid data', async () => {
+    const creator = await prisma.user.create({ data: { email: 'api201@example.com', name: 'API201' } });
+    const auth = await getAuth();
+    auth.mockResolvedValueOnce({ user: { id: creator.id, email: creator.email } } as any);
+    const { POST } = await import('@/app/api/restaurants/route');
     const req = {
       json: async () => ({
         name: 'Test Restaurant',
