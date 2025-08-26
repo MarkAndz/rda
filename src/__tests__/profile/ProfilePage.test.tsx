@@ -113,6 +113,22 @@ describe('ProfilePage order history', () => {
     expect(html).toContain('/profile?page=2');
   });
 
+  it("queries only the current user's orders (customer filter applied)", async () => {
+    const { auth, prisma } = await getMocks();
+    auth.mockResolvedValue({ user: { id: 'user-42' } });
+    prisma.order.findMany.mockResolvedValue([makeOrder({ id: 'ord-1' })]);
+    prisma.order.count.mockResolvedValue(1);
+    prisma.account.findMany.mockResolvedValue([]);
+
+    const { default: ProfilePage } = await import('@/app/profile/page');
+    const el = await ProfilePage({ searchParams: Promise.resolve({}) as any });
+    renderToStaticMarkup(el as unknown as React.ReactElement);
+
+    expect(prisma.order.findMany).toHaveBeenCalled();
+    const args = prisma.order.findMany.mock.calls[0][0];
+    expect(args.where.customerId).toBe('user-42');
+  });
+
   it('applies status filter and preserves in pagination links', async () => {
     const { auth, prisma } = await getMocks();
     auth.mockResolvedValue({ user: { id: 'user-1' } });
