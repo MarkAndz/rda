@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { auth } from '@/auth';
 
 function slugify(str: string) {
   return str
@@ -10,6 +11,13 @@ function slugify(str: string) {
 
 export async function POST(req: NextRequest) {
   try {
+    // Require authentication
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const data = await req.json();
 
     if (!data.name || !data.address) {
@@ -49,6 +57,17 @@ export async function POST(req: NextRequest) {
         imageUrl: data.imageUrl,
       },
     });
+
+    // Ensure the creator is recorded as an OWNER member of this restaurant
+    // Ensure membership exists (manual upsert because of composite unique key)
+    const existing = await prisma.restaurantMember.findFirst({
+      where: { userId, restaurantId: restaurant.id },
+    });
+    if (!existing) {
+      await prisma.restaurantMember.create({
+        data: { userId, restaurantId: restaurant.id, role: 'OWNER' },
+      });
+    }
 
     return NextResponse.json(restaurant, { status: 201 });
   } catch (error: any) {
