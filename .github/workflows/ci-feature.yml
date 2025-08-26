@@ -17,7 +17,8 @@ jobs:
     name: Build and Test
     runs-on: ubuntu-latest
     env:
-      NEXT_TELEMETRY_DISABLED: '1'
+  NEXT_TELEMETRY_DISABLED: '1'
+  DATABASE_URL: 'file:./test.db'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,6 +34,9 @@ jobs:
 
       - name: Generate Prisma Client
         run: npm run prisma:generate
+
+      - name: Prepare test database (Prisma db push)
+        run: npx prisma db push
 
       - name: Build
         run: npm run build
